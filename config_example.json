@@ -1,0 +1,27 @@
+{
+	
+	"vector_store_location":"local",
+	"local_settings": {
+		"vector_store_folder":"sample_vector_store",
+		"index_name":"ragtime"
+	},
+	"prompt_settings":{
+		"system_prompt_template":"demo_system_prompt.txt"	
+	},
+	"content_settings": {
+		"document_file":"processed_docs.json",
+    	"text_has_labels":true,
+        "label_order": ["Section","Content"],
+        "editor_fields": {
+            "Section": {
+                "ui_name": "Information Category",
+                "type": "textfield"
+            },
+            "Content": {
+                "ui_name": "Information",
+                "type": "textarea",
+                "is_content":true
+            }
+        }
+    }
+}
