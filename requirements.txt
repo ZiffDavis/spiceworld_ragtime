@@ -6,6 +6,9 @@ dateparser
 google_cloud_aiplatform
 langchain_community
 llama_index
+llama-index-embeddings-langchain
+llama-index-vector-stores-postgres
+llama-index-vector-stores-redis
 loguru
 openai
 pdfplumber
@@ -17,5 +20,4 @@ Requests
 striprtf
 tiktoken
 Unidecode
-llama-index-embeddings-langchain
-llama-index-vector-stores-postgres
+vertexai
