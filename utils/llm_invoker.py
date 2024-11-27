@@ -1,12 +1,12 @@
-import openai
-import os
 import json
-import os
-import logging
-from pydantic import BaseModel
-from utils.json_repair import fix_json, clean_json
-import warnings
+from logging import getLogger
+
+import openai
 import requests
+
+from utils.json_repair import fix_json
+
+logger = getLogger(__name__)
 
 class LLMInvoker:
     def __init__(self, llm="openai", json_output=False):
@@ -19,7 +19,9 @@ class LLMInvoker:
         json_value = None
         try:
             json_value = json.loads(self.all_text)
-        except:
+        except Exception as e:
+            logger.warning(f"failed to decode LLM response {e}")
+            logger.info(f"LLM response: {self.all_text}")
             json_value = fix_json(self.all_text)
         return json_value
 
@@ -34,41 +36,41 @@ class LLMInvoker:
         if self.default_llm == "openai":
             return "gpt-4o"
         elif self.default_llm == "ollama":
-          return "llama3"
+            return "llama3"
 
     def ask_llm(self, prompt, model=None, stream=True):
         model = self.pick_model(model)
 
-        for itm in self.call_llm(
-            prompt, model=model, stream=stream
-        ):
+        for itm in self.call_llm(prompt, model=model, stream=stream):
             if self.default_llm == "openai":
                 for choice in itm.choices:
                     delta = choice.delta
                     content = delta.content
-                    if content != None:
+                    if content is not None:
                         self.all_text += content
                         yield content
-            elif self.default_llm=="ollama":
+            elif self.default_llm == "ollama":
                 yield itm
+
     def ask_ollama(self, prompt):
         full_text = ""
-        all_text=""
-        for response in requests.post('http://localhost:11434/api/chat', stream=True, data=json.dumps({
-          "model": "llama3",
-          "messages":[{"role":"user","content":prompt}]
-        })):
-          txt = response.decode().strip()
-          all_text+=txt
-          try:
-            data = json.loads(all_text)
-            txt = data["message"]["content"]
-            yield txt
-            full_text+=txt
-            all_text = ""
-          except Exception as e:
-            # print(e)
-            continue
+        all_text = ""
+        for response in requests.post(
+            "http://localhost:11434/api/chat",
+            stream=True,
+            data=json.dumps({"model": "llama3", "messages": [{"role": "user", "content": prompt}]}),
+        ):
+            txt = response.decode().strip()
+            all_text += txt
+            try:
+                data = json.loads(all_text)
+                txt = data["message"]["content"]
+                yield txt
+                full_text += txt
+                all_text = ""
+            except Exception:
+                # print(e)
+                continue
         return full_text
 
     def ask_openai(self, prompt, model="gpt-4o", stream=True):
@@ -82,9 +84,7 @@ class LLMInvoker:
             "presence_penalty": 0.5,
             "stream": stream,
         }
-        if not self.json_output or (
-            model.find("-1106") == -1 and model.find("gpt-4o") == -1
-        ):
+        if not self.json_output or (model.find("-1106") == -1 and model.find("gpt-4o") == -1):
             del args["response_format"]
 
         response = openai.chat.completions.create(**args)
